@@ -87,6 +87,13 @@ public actor Engine {
     if let maxNumTokens = engineConfig.maxNumTokens {
       litert_lm_engine_settings_set_max_num_tokens(settings, Int32(maxNumTokens))
     }
+    if let maxNumImages = engineConfig.maxNumImages {
+      litert_lm_engine_settings_set_max_num_images(settings, Int32(maxNumImages))
+    }
+    if let parallelFileSectionLoading = engineConfig.parallelFileSectionLoading {
+      litert_lm_engine_settings_set_parallel_file_section_loading(
+        settings, parallelFileSectionLoading)
+    }
     if let cacheDir = engineConfig.cacheDir {
       litert_lm_engine_settings_set_cache_dir(settings, cacheDir)
     }
@@ -170,6 +177,9 @@ public actor Engine {
         seed: Int32(samplerParams.seed)
       )
       litert_lm_session_config_set_sampler_params(cSessionConfig, &params)
+    }
+    if let maxOutputTokens = conversationConfig.maxOutputTokens {
+      litert_lm_session_config_set_max_output_tokens(cSessionConfig, Int32(maxOutputTokens))
     }
 
     guard let cConversationConfig = litert_lm_conversation_config_create() else {

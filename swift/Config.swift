@@ -54,6 +54,12 @@ public struct EngineConfig {
   /// The maximum number of the sum of input and output tokens. It is equivalent
   /// to the size of the kv-cache. When `nil`, use the default value from the model or the engine.
   public let maxNumTokens: Int?
+  /// The maximum number of images the model can handle. When `nil`, use the default value from the
+  /// model or engine.
+  public let maxNumImages: Int?
+  /// Whether the engine should load model file sections in parallel. When `nil`, use the engine
+  /// default.
+  public let parallelFileSectionLoading: Bool?
   /// The directory for placing cache files. It should be a directory where the
   /// application has write access. If `nil`, it uses the directory of the `modelPath`.
   public let cacheDir: String?
@@ -68,23 +74,34 @@ public struct EngineConfig {
   ///   - maxNumTokens: The maximum number of the sum of input and output tokens. It is
   ///     equivalent to the size of the kv-cache. When `nil`, use the default value from the
   ///     model or the engine.
+  ///   - maxNumImages: The maximum number of images the model can handle. When `nil`, use the
+  ///     default value from the model or engine.
+  ///   - parallelFileSectionLoading: Whether the engine should load model file sections in
+  ///     parallel. When `nil`, use the engine default.
   ///   - cacheDir: The directory for placing cache files. It should be a directory where the
   ///     application has write access. If `nil`, it uses the directory of the `modelPath`.
-  /// - Throws: `LiteRTLMError` if `maxNumTokens` is less than or equal to 0.
+  /// - Throws: `LiteRTLMError` if `maxNumTokens` or `maxNumImages` is less than or equal to 0.
   public init(
     modelPath: String, backend: Backend = .cpu(), visionBackend: Backend? = nil,
     audioBackend: Backend? = nil,
     maxNumTokens: Int? = nil,
+    maxNumImages: Int? = nil,
+    parallelFileSectionLoading: Bool? = nil,
     cacheDir: String? = nil
   ) throws {
     if let maxNumTokens, maxNumTokens <= 0 {
       throw LiteRTLMError.config(.invalidMaxNumTokens)
+    }
+    if let maxNumImages, maxNumImages <= 0 {
+      throw LiteRTLMError.config(.invalidMaxNumImages(count: maxNumImages))
     }
     self.modelPath = modelPath
     self.backend = backend
     self.visionBackend = visionBackend
     self.audioBackend = audioBackend
     self.maxNumTokens = maxNumTokens
+    self.maxNumImages = maxNumImages
+    self.parallelFileSectionLoading = parallelFileSectionLoading
     self.cacheDir = cacheDir
   }
 }
@@ -149,6 +166,10 @@ public struct ConversationConfig {
   // If `nil`, then uses the engine's default values.
   public let samplerConfig: SamplerConfig?
 
+  // Maximum output tokens for each model response.
+  // If `nil`, then uses the engine's default value.
+  public let maxOutputTokens: Int?
+
   /// - Parameters:
   ///   - systemMessage: The system message to be used in the conversation.
   ///   - initialMessages: The initial messages to populate the conversation history.
@@ -159,7 +180,8 @@ public struct ConversationConfig {
     systemMessage: Message? = nil,
     initialMessages: [Message] = [],
     tools: [Tool] = [],
-    samplerConfig: SamplerConfig? = nil
+    samplerConfig: SamplerConfig? = nil,
+    maxOutputTokens: Int? = nil
   ) {
     self.systemMessage = systemMessage.map { msg in
       msg.role == .system
@@ -168,5 +190,6 @@ public struct ConversationConfig {
     self.initialMessages = initialMessages
     self.tools = tools
     self.samplerConfig = samplerConfig
+    self.maxOutputTokens = maxOutputTokens
   }
 }
